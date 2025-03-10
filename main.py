@@ -3,6 +3,7 @@ import subprocess
 from datetime import datetime, timedelta
 import json
 import os
+from QEMUManager import *
 
 
 def load_containers():
@@ -30,11 +31,12 @@ type = st.selectbox(
 )
 
 if type == "Виртуалка":
-    resource = st.selectbox("ОС для виртуалки", ["Ubuntu", "Fedora"])
+    resource = st.selectbox("ОС для виртуалки", ["Alpine"])
 else:  # Контейнер
     resource = st.selectbox("Образ для контейнера", ["Nginx", "Apache"])
     my_port = st.slider("Порт для контейнера",8080,9000,8080)
 
+name = st.text_input("Название VM: ")
 ram = st.slider("Объём RAM (ГБ)", 1, 32, 1)
 cpu = st.slider("Количество vCPU", 1, 16, 1)
 disk = st.slider("Дисковое пространство (ГБ)", 1, 100, 1)
@@ -62,7 +64,28 @@ if st.button("Создать"):
         except FileNotFoundError:
             st.write("Ошибка: Docker не установлен или не найден")
     else:
-        st.write("Виртуалки пока не реализованы")
+        try: 
+            if 'vm' not in st.session_state:
+                st.session_state.vm = QEMUMananger()
+            if 'vm_created' not in st.session_state:
+                st.session_state.vm_created = False
+
+            if not st.session_state.vm_created:
+                st.session_state.vm.createVM(name, cpu, ram*1024, disk, "alpinelinux3.19.qcow2")
+                st.session_state.vm_created = True
+                st.write("VM создана")
+                
+            if st.session_state.vm_created:
+                ip = st.session_state.vm.getIP()
+                st.write(f"IP адрес виртуальной машины: {ip}")
+            if st.session_state.vm_created:
+                if st.button("Остановить VM"):
+                    st.write("VM остановлена")
+                    st.session_state.vm.stopVM()
+                    st.session_state.vm_created = False
+        except Exception as _ex:
+            st.error(f"Error: {_ex}")
+            
 
 st.subheader("Список запущенных контейнеров")
 if containers:

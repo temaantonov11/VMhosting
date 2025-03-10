@@ -1,0 +1,4 @@
+libvirt
+streamlit
+logging
+colorama

@@ -20,7 +20,8 @@ wheels/
 *.egg 
 *.manifest 
 *.spec 
-
+vm_disks/
+.vscode/
 # Log files
 pip-log.txt
 pip-delete-this-directory.txt
