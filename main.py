@@ -13,6 +13,7 @@ docker_manager = DockerManager()
 my_port = 8080
 name = "my_vm"
 
+
 st.title("Хостинг-провайдер")
 type = st.selectbox(
     "Тип",
@@ -54,22 +55,41 @@ if st.button("Создать"):
             
             log.info(f"vm_created: {st.session_state.vm_created}")
 
-            if st.session_state.vm_created:
-                if 'ip' not in st.session_state:
-                    ip = st.session_state.vm.getIP()
-                st.write(f"IP адрес виртуальной машины: {ip}")
+           
         except Exception as _ex:
             st.error(f"Error: {_ex}")
 
 if st.session_state.get("vm_created", False):
-        if st.button("Остановить VM"):
-            try:
-                st.session_state.vm.stopVM()
-                st.session_state.vm_created = False
-                st.write("VM остановлена")
-            except Exception as _ex:
-                st.error(f"Ошибка остановки VM: {_ex}")    
-            
+    
+    st.subheader("Управление VM")
+    
+    if 'ip' not in st.session_state:
+        ip = st.session_state.vm.getIP()
+        st.write(f"IP адрес виртуальной машины: {ip}")
+     
+               
+
+    if st.button("Обновить информацию о ресурсах"):
+        cpu_load = st.session_state.vm.get_cpu_usage()
+        memory_usage = st.session_state.vm.get_memory_usage()
+        disk_usage = st.session_state.vm.get_disk_usage()
+
+        if cpu_load is not None:
+            st.write(f"Нагрузка на CPU: {cpu_load} ns")
+        if memory_usage is not None:
+            st.write(f"Использование RAM: {memory_usage:.2f} MB")
+        if disk_usage is not None:
+            read_bytes, write_bytes = disk_usage
+            st.write(f"Использовано диска: Прочитано {read_bytes} байт, Записано {write_bytes} байт")
+    
+    if st.button("Остановить VM"):
+        try:
+            st.session_state.vm.stopVM()
+            st.session_state.vm_created = False
+            st.write("VM остановлена")
+        except Exception as _ex:
+            st.error(f"Ошибка остановки VM: {_ex}")    
+          
 
 st.subheader("Список запущенных контейнеров")
 if docker_manager.containers:

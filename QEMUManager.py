@@ -111,8 +111,41 @@ class QEMUMananger:
         except Exception as _ex:
             log.error(f'[QEMU]: Failed stop VM. \n {_ex}')
 
+    def get_cpu_usage(self):
+        try:
+            if self.vm is None:
+                log.error("[QEMU]: VM object is not initialized.")
+                return None
+            info = self.vm.info()
+            cpu_time = info[4]
+            cpu_count = info[3]
+            cpu_load = (cpu_time / 1e9) / cpu_count
+            return cpu_load
+        except libvirt.libvirtError as _ex:
+            log.error(f"[QEMU]: Failed to get CPU usage. \n {_ex}")
 
+    def get_memory_usage(self):
+        try:
+            if self.vm is None:
+                log.error("[QEMU]: VM object is not initialized.")
+                return None
+            info = self.vm.info()
+            used_memory = info[1]
+            return used_memory / 1024
+        except libvirt.libvirtError as _ex:
+            log.error(f"[QEMU]: Failed to get memory usage.")
 
+    def get_disk_usage(self):
+        try:
+            if self.vm is None:
+                log.error("[QEMU]: VM object is not initialized.")
+                return None
+            disk_stats = self.vm.blockStats('vda')
+            read_bytes = disk_stats[0]
+            write_bytes = disk_stats[1]
+            return read_bytes, write_bytes            
+        except libvirt.libvirtError as _ex:
+            log.error(f"[QEMU]: Failed to get disk usage.")
 
 
     
