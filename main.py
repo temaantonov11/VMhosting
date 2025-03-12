@@ -5,6 +5,7 @@ import json
 import os
 from QEMUManager import *
 from DockerManager import *
+import threading
 
 
 docker_manager = DockerManager()
@@ -13,6 +14,13 @@ docker_manager = DockerManager()
 my_port = 8080
 name = "my_vm"
 
+def stop_vm_after_timeLimit(vm, time_limit):
+    time.sleep(time_limit * 60)
+    try:
+        vm.stopVM()
+        st.wirte(f"VM остановлена по истечению времени лимита ({time_limit}минут)")
+    except Exception as _ex:
+        log.error("Failed stop with time limit")
 
 st.title("Хостинг-провайдер")
 type = st.selectbox(
@@ -53,6 +61,7 @@ if st.button("Создать"):
                 st.session_state.vm_created = True
                 st.write("VM создана")
             
+
             log.info(f"vm_created: {st.session_state.vm_created}")
 
            
@@ -67,8 +76,20 @@ if st.session_state.get("vm_created", False):
         ip = st.session_state.vm.getIP()
         st.write(f"IP адрес виртуальной машины: {ip}")
      
-               
+    stop_thread = threading.Thread(
+                target=stop_vm_after_timeLimit,
+                args=(st.session_state.vm, time_limit)
+                )
+    stop_thread.daemon = True
+    stop_thread.start()
+    st.write(f"VM будет остановлена через {time_limit} минут.")
+             
+    if 'start_time' not in st.session_state:
+        st.session_state.start_time = datetime.now()
 
+    elapsed_time = (datetime.now() - st.session_state.start_time).total_seconds() / 60
+    remaining_time = max(0, time_limit - elapsed_time)
+    st.write(f"Оставшееся время до остановки VM: {remaining_time:.1f} минут")
     if st.button("Обновить информацию о ресурсах"):
         cpu_load = st.session_state.vm.get_cpu_usage()
         memory_usage = st.session_state.vm.get_memory_usage()
@@ -100,7 +121,7 @@ if docker_manager.containers:
         if current_time > info["time_limit"]:
             id, message = docker_manager.stop_container(container_id)
             if id:
-                st.write(f"{message}, превышен лимит времени ({time_limit} мин)")
+                st.write(f"{message}, превышен лимит времени ({info["time_limit"]} мин)")
             else:
                 st.write(message)
 else:
