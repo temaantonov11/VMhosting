@@ -18,7 +18,8 @@ def stop_vm_after_timeLimit(vm, time_limit):
     time.sleep(time_limit * 60)
     try:
         vm.stopVM()
-        st.wirte(f"VM остановлена по истечению времени лимита ({time_limit}минут)")
+        st.session_state.vm_created = False
+        
     except Exception as _ex:
         log.error("Failed stop with time limit")
 
@@ -83,37 +84,41 @@ if st.session_state.get("vm_created", False):
     stop_thread.daemon = True
     stop_thread.start()
     
+    time_placeholder = st.empty()
+    cpu_placeholder = st.empty()
+    memory_placeholder = st.empty()
+    disk_placeholder = st.empty()
              
     if 'start_time' not in st.session_state:
         st.session_state.start_time = datetime.now()
 
-    
-    if st.button("Обновить информацию о VM"):
-
-        elapsed_time = (datetime.now() - st.session_state.start_time).total_seconds() / 60
-        remaining_time = max(0, time_limit - elapsed_time)
-        st.write(f"Оставшееся время до остановки VM: {remaining_time:.1f} минут")
-
-        cpu_load = st.session_state.vm.get_cpu_usage()
-        memory_usage = st.session_state.vm.get_memory_usage()
-        disk_usage = st.session_state.vm.get_disk_usage()
-
-        if cpu_load is not None:
-            st.write(f"Нагрузка на CPU: {cpu_load} ns")
-        if memory_usage is not None:
-            st.write(f"Использование RAM: {memory_usage:.2f} MB")
-        if disk_usage is not None:
-            read_bytes, write_bytes = disk_usage
-            st.write(f"Использовано диска: Прочитано {read_bytes} байт, Записано {write_bytes} байт")
-    
     if st.button("Остановить VM"):
         try:
             st.session_state.vm.stopVM()
             st.session_state.vm_created = False
             st.write("VM остановлена")
         except Exception as _ex:
-            st.error(f"Ошибка остановки VM: {_ex}")    
-          
+            st.error(f"Ошибка остановки VM: {_ex}")  
+    
+    while st.session_state.vm_created:
+
+        elapsed_time = (datetime.now() - st.session_state.start_time).total_seconds() / 60
+        remaining_time = max(0, time_limit - elapsed_time)
+        time_placeholder.write(f"Оставшееся время до остановки VM: {remaining_time:.1f} минут")
+
+        cpu_load = st.session_state.vm.get_cpu_usage()
+        memory_usage = st.session_state.vm.get_memory_usage()
+        disk_usage = st.session_state.vm.get_disk_usage()
+
+        if cpu_load is not None:
+            cpu_placeholder.write(f"Нагрузка на CPU: {cpu_load} ns")
+        if memory_usage is not None:
+            memory_placeholder.write(f"Использование RAM: {memory_usage:.2f} MB")
+        if disk_usage is not None:
+            read_bytes, write_bytes = disk_usage
+            disk_placeholder.write(f"Использовано диска: Прочитано {read_bytes} байт, Записано {write_bytes} байт")
+        time.sleep(5)
+        
 
 st.subheader("Список запущенных контейнеров")
 if docker_manager.containers:
@@ -124,7 +129,7 @@ if docker_manager.containers:
         if current_time > info["time_limit"]:
             id, message = docker_manager.stop_container(container_id)
             if id:
-                st.write(f"{message}, превышен лимит времени ({info["time_limit"]} мин)")
+                st.write(f"{message}, превышен лимит времени ({info['time_limit']} мин)")
             else:
                 st.write(message)
 else:
