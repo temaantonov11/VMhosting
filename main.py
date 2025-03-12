@@ -69,22 +69,31 @@ if st.button("Создать"):
                 st.session_state.vm = QEMUMananger()
             if 'vm_created' not in st.session_state:
                 st.session_state.vm_created = False
+            
+            log.info(f"vm_created: {st.session_state.vm_created}")
 
             if not st.session_state.vm_created:
                 st.session_state.vm.createVM(name, cpu, ram*1024, disk, "alpinelinux3.19.qcow2")
                 st.session_state.vm_created = True
                 st.write("VM создана")
-                
+            
+            log.info(f"vm_created: {st.session_state.vm_created}")
+
             if st.session_state.vm_created:
-                ip = st.session_state.vm.getIP()
+                if 'ip' not in st.session_state:
+                    ip = st.session_state.vm.getIP()
                 st.write(f"IP адрес виртуальной машины: {ip}")
-            if st.session_state.vm_created:
-                if st.button("Остановить VM"):
-                    st.write("VM остановлена")
-                    st.session_state.vm.stopVM()
-                    st.session_state.vm_created = False
         except Exception as _ex:
             st.error(f"Error: {_ex}")
+
+if st.session_state.get("vm_created", False):
+        if st.button("Остановить VM"):
+            try:
+                st.session_state.vm.stopVM()
+                st.session_state.vm_created = False
+                st.write("VM остановлена")
+            except Exception as _ex:
+                st.error(f"Ошибка остановки VM: {_ex}")    
             
 
 st.subheader("Список запущенных контейнеров")

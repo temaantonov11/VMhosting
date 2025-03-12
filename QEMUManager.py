@@ -11,6 +11,7 @@ class QEMUMananger:
     def __init__(self):
         try:
             self.__connection = libvirt.open("qemu:///system")
+            self.vm = None  # Инициализация атрибута vm
             log.info("[QEMU]: Successful connect to hypervisor")
         except libvirt.libvirtError as _ex:
             log.error(f"[QEMU]: Failed connection to hypervisor \n {_ex}")
