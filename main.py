@@ -82,15 +82,18 @@ if st.session_state.get("vm_created", False):
                 )
     stop_thread.daemon = True
     stop_thread.start()
-    st.write(f"VM будет остановлена через {time_limit} минут.")
+    
              
     if 'start_time' not in st.session_state:
         st.session_state.start_time = datetime.now()
 
-    elapsed_time = (datetime.now() - st.session_state.start_time).total_seconds() / 60
-    remaining_time = max(0, time_limit - elapsed_time)
-    st.write(f"Оставшееся время до остановки VM: {remaining_time:.1f} минут")
-    if st.button("Обновить информацию о ресурсах"):
+    
+    if st.button("Обновить информацию о VM"):
+
+        elapsed_time = (datetime.now() - st.session_state.start_time).total_seconds() / 60
+        remaining_time = max(0, time_limit - elapsed_time)
+        st.write(f"Оставшееся время до остановки VM: {remaining_time:.1f} минут")
+
         cpu_load = st.session_state.vm.get_cpu_usage()
         memory_usage = st.session_state.vm.get_memory_usage()
         disk_usage = st.session_state.vm.get_disk_usage()
